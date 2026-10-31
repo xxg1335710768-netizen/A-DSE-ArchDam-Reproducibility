@@ -1,0 +1,3 @@
+﻿budget,comparison,friedman_overall_p,wilcoxon_two_sided_raw_p,wilcoxon_two_sided_Holm_p,alpha
+120000,NSGA-II vs MOEA/D,0.00022486732417884692,0.001953125,0.00390625,0.05
+120000,NSGA-II vs MOPSO-CD,0.00022486732417884692,0.064453125,0.064453125,0.05

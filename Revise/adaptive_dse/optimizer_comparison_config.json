@@ -1,0 +1,57 @@
+{
+  "experiment_name": "optimizer_comparison_binary_cv_pop200_budget120k_400fe_de_mmoe",
+  "model_checkpoint": "../surrogate_benchmark/results/seed_2025/ensemble_mmoe/fitted_model.pt",
+  "model_metadata": "../surrogate_benchmark/results/seed_2025/ensemble_mmoe/run_metadata.json",
+  "dataset": "../dataset/SurrogateDataset.xlsx",
+  "model_split_seed": 2025,
+  "population_size": 200,
+  "budgets": [2400, 5000, 10000, 15000, 20000, 30000, 40000, 50000, 60000, 80000, 100000, 120000],
+  "seeds": [2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034],
+  "objective_normalization_min": [266.663, 14.884],
+  "objective_normalization_max": [298.333, 21.917],
+  "hv_ideal_physical": [240.0, 7.5],
+  "hv_reference_physical": [350.0, 30.0],
+  "signed_stress_lower_mpa": -1.5,
+  "signed_stress_upper_mpa": 9.78,
+  "nsga2": {
+    "crossover_probability": 0.9,
+    "crossover_variable_probability": 0.5,
+    "crossover_eta": 15.0,
+    "mutation_probability": 0.9,
+    "mutation_variable_probability": 0.0625,
+    "mutation_eta": 20.0,
+    "eliminate_duplicates": true
+  },
+  "moead": {
+    "reference_directions": 200,
+    "decomposition": "tchebycheff",
+    "neighbors": 20,
+    "neighbor_mating_probability": 0.9,
+    "offspring_per_batch": 200,
+    "update_mode": "synchronous_batch_binary_feasibility",
+    "crossover_probability": 0.9,
+    "crossover_variable_probability": 0.5,
+    "crossover_eta": 15.0,
+    "mutation_probability": 0.9,
+    "mutation_variable_probability": 0.0625,
+    "mutation_eta": 20.0
+  },
+  "mopso_cd": {
+    "swarm_size": 200,
+    "inertia": 0.6,
+    "cognitive": 2.0,
+    "social": 2.0,
+    "maximum_velocity_rate": 0.5,
+    "archive_size": 200,
+    "leader_selection": "crowding_distance_binary_tournament",
+    "boundary_handling": "clamp",
+    "mutation": "none",
+    "feasible_nondominated_archive": true,
+    "pbest_nondominated_tie": "seeded_random_half"
+  },
+  "timing": {
+    "include_model_loading": false,
+    "torch_threads": 1,
+    "batch_prediction": true
+  }
+}
