@@ -17,7 +17,7 @@
   "gate_relative_error_limit": 0.01,
   "representativeness_threshold": 0.01,
   "uncertainty_batch_size": 3,
-  "strict_duplicate_distance": 1e-08,
+  "strict_duplicate_distance": 1E-08,
   "uncertainty_diversity_distance": 0.025,
   "uncertainty_weight_floor": 0.2,
   "maximum_successful_fe_count": null,
@@ -49,11 +49,12 @@
   "ablation_id": "M4",
   "ablation_description": "Evaluate the three representative points for diagnosis only; always add three high-uncertainty PF samples, retrain once, rerun NSGA-II, and update A-DSE without waiting for the gate to pass.",
   "model_id_prefix": "m4_no_accuracy_trigger",
-  "dataset": "D:\\Projects_Manage\\Proj_GX_new\\DDS_experiments\\Revise\\dataset\\SurrogateDataset.xlsx",
+  "dataset": "Revise/dataset/SurrogateDataset.xlsx",
   "dataset_rows": "TrainX/TrainY rows 0:80",
   "independent_test_usage": "not used",
-  "template_model": "D:\\Projects_Manage\\Proj_GX_new\\DDS_experiments\\Revise\\surrogate_benchmark\\results\\seed_2025\\ensemble_mmoe\\fitted_model.pt",
+  "template_model": "Revise/surrogate_benchmark/results/seed_2025/ensemble_mmoe/fitted_model.pt",
   "device": "cpu",
   "acquisition_rule": "weighted geometric mean of two-objective model uncertainty",
-  "accuracy_gate_role": "diagnostic only; one AL batch is added every outer iteration"
+  "accuracy_gate_role": "diagnostic only; one AL batch is added every outer iteration",
+  "public_comparison_status": "legacy_100x100"
 }

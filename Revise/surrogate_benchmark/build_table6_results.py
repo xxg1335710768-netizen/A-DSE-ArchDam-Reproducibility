@@ -1,8 +1,9 @@
-"""Build the revised Table 5 and uncertainty-comparison tables.
+"""Build manuscript Tables 6 and 7 from completed benchmark runs.
 
-The single probabilistic MMoE row is evaluated from the first member of each
-formal RMSE-checkpoint deep ensemble.  No model is retrained and no prior result
-is overwritten.
+Predictive metrics are reconstructed from the per-seed result directories.
+Fitting times are joined from the separately measured fixed-configuration
+runtime benchmark; hyperparameter-search time is never substituted for fitting
+time.  No model is retrained and no prior result is overwritten.
 """
 
 from __future__ import annotations
@@ -35,7 +36,13 @@ BASE_RESULTS = BASE_DIR / "results"
 # part of the release.
 MC_RESULTS = BASE_RESULTS
 DE_RESULTS = BASE_RESULTS
-OUTPUT_DIR = BASE_DIR / "table5_results"
+OUTPUT_DIR = BASE_DIR / "table6_results"
+PUBLISHED_RUNTIME_REFERENCE = (
+    BASE_DIR / "public_results" / "table6" / "fitting_time_by_seed.csv"
+)
+RERUN_RUNTIME_REFERENCE = (
+    BASE_DIR / "fixed_runtime_all_models" / "all_models_runtime_by_seed.csv"
+)
 
 SOURCES = {
     "GPR": (BASE_RESULTS, "gpr", "total predictive variance"),
@@ -80,20 +87,37 @@ def _workflow_minutes(
     *,
     include_extra_members: bool,
 ) -> float:
-    result_dir = root / f"seed_{seed}" / stored_name
-    with (result_dir / "run_metadata.json").open("r", encoding="utf-8") as file:
-        metadata = json.load(file)
-    seconds = float(metadata["search_seconds"])
-    if include_extra_members:
-        if metadata.get("selected_search_member_reused", True):
-            selection = pd.read_csv(result_dir / "model_selection.csv")
-            selected_seconds = float(
-                selection.loc[selection["selected"], "fit_seconds"].iloc[0]
-            )
-            seconds += float(metadata["final_model_fit_seconds"]) - selected_seconds
-        else:
-            seconds += float(metadata["final_model_fit_seconds"])
-    return seconds / 60.0
+    del root
+    labels = {
+        "gpr": "GPR",
+        "xgboost": "XGB",
+        "single_mlp_mc_dropout": "MLP",
+        "pca_gpr": "PCA-GPR",
+        "multitask_mlp_mc_dropout": "MT-MLP",
+        "ensemble_mmoe": "DE-MMoE" if include_extra_members else "MMoE",
+    }
+    if stored_name not in labels:
+        raise ValueError(f"No runtime label for {stored_name!r}.")
+    runtime_path = (
+        RERUN_RUNTIME_REFERENCE
+        if RERUN_RUNTIME_REFERENCE.is_file()
+        else PUBLISHED_RUNTIME_REFERENCE
+    )
+    if not runtime_path.is_file():
+        raise FileNotFoundError(
+            "The fixed-configuration runtime reference is missing: "
+            f"{runtime_path}"
+        )
+    runtime = pd.read_csv(runtime_path)
+    row = runtime.loc[
+        (runtime["seed"] == seed) & (runtime["method"] == labels[stored_name])
+    ]
+    if len(row) != 1:
+        raise RuntimeError(
+            f"Expected one fitting-time row for seed={seed}, "
+            f"model={labels[stored_name]}."
+        )
+    return float(row.iloc[0]["wall_minutes"])
 
 
 def _existing_rows() -> tuple[list[dict], list[dict], list[dict]]:
@@ -279,55 +303,32 @@ def _markdown(headers: list[str], rows: list[list[str]]) -> str:
 def main() -> None:
     torch.set_num_threads(1)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    table5_rows, probability_rows, utility_rows = _existing_rows()
-    single_table5, single_probability, single_utility = _single_mmoe_rows()
+    table5_rows, probability_rows, _ = _existing_rows()
+    single_table5, single_probability, _ = _single_mmoe_rows()
     table5 = pd.DataFrame(table5_rows + single_table5)
     probability = pd.DataFrame(probability_rows + single_probability)
-    utility = pd.DataFrame(utility_rows + single_utility)
     order = ["GPR", "XGB", "MLP", "PCA-GPR", "MT-MLP", "MMoE", "DE-MMoE"]
     order_map = {name: index for index, name in enumerate(order)}
-    for frame in (table5, probability, utility):
+    for frame in (table5, probability):
         frame["model_order"] = frame["model"].map(order_map)
         frame.sort_values(["model_order", "seed"], inplace=True)
         frame.drop(columns="model_order", inplace=True)
 
-    table5.to_csv(OUTPUT_DIR / "table5_by_seed.csv", index=False)
-    probability.to_csv(OUTPUT_DIR / "uncertainty_probability_by_seed.csv", index=False)
-    utility.to_csv(OUTPUT_DIR / "uncertainty_utility_by_seed.csv", index=False)
+    table5.rename(columns={"time_min": "fitting_time_min"}).to_csv(
+        OUTPUT_DIR / "table6_by_seed.csv", index=False
+    )
+    probability[["seed", "model", "picp95", "mpiw95"]].to_csv(
+        OUTPUT_DIR / "table7_by_seed.csv", index=False
+    )
     table5_summary = _aggregate(table5, ["r2", "rmse", "nll", "time_min"])
     probability_summary = _aggregate(
         probability,
         ["nll_raw", "nll_calibrated", "picp95", "mpiw95", "calibration_error"],
     )
-    utility_summary = (
-        utility.groupby(["model", "uncertainty_type"], sort=False)[
-            ["spearman_error", "auroc_high_error", "top20_error_enrichment"]
-        ]
-        .agg(["mean", "std", "var"])
-        .reset_index()
-    )
-    utility_summary.columns = [
-        "model",
-        "uncertainty_type",
-        "spearman_mean",
-        "spearman_std",
-        "spearman_var",
-        "auroc_mean",
-        "auroc_std",
-        "auroc_var",
-        "enrichment_mean",
-        "enrichment_std",
-        "enrichment_var",
-    ]
-    table5_summary.to_csv(OUTPUT_DIR / "table5_summary.csv", index=False)
-    probability_summary.to_csv(
-        OUTPUT_DIR / "uncertainty_probability_summary.csv",
-        index=False,
-    )
-    utility_summary.to_csv(
-        OUTPUT_DIR / "uncertainty_utility_summary.csv",
-        index=False,
-    )
+    table5_summary.to_csv(OUTPUT_DIR / "table6_summary.csv", index=False)
+    probability_summary[
+        ["model", "picp95_mean", "picp95_std", "mpiw95_mean", "mpiw95_std"]
+    ].to_csv(OUTPUT_DIR / "table7_summary.csv", index=False)
 
     table_rows = []
     for model in order:
@@ -353,53 +354,32 @@ def main() -> None:
                 _format_pm(row, "calibration_error"),
             ]
         )
-    utility_table_rows = []
-    for _, row in utility_summary.iterrows():
-        utility_table_rows.append(
-            [
-                str(row["model"]),
-                str(row["uncertainty_type"]),
-                f"{row['spearman_mean']:.6f} ± {row['spearman_std']:.6f}",
-                f"{row['auroc_mean']:.6f} ± {row['auroc_std']:.6f}",
-                f"{row['enrichment_mean']:.6f} ± {row['enrichment_std']:.6f}",
-            ]
-        )
-
     report = "\n".join(
         [
-            "# Revised Table 5 and uncertainty comparison",
+            "# Manuscript Tables 6 and 7",
             "",
-            "## Table 5",
+            "## Table 6: surrogate performance",
             "",
             _markdown(
                 ["Model", "R²", "RMSE", "Calibrated NLL", "Time (min)"],
                 table_rows,
             ),
             "",
-            "Values are mean ± sample standard deviation over five development splits; the fixed 80-point test set is shared. Time is the recorded nine-configuration search workflow and is not manuscript-final because formal runs were executed concurrently.",
+            "Values are mean ± sample standard deviation over five development splits; the fixed 80-point test set is shared. Fitting time is wall-clock time for the frozen final configuration and excludes hyperparameter search, data preparation, inference, uncertainty sampling, metrics, and serialization.",
             "",
-            "## Predictive uncertainty quality",
+            "## Table 7: predictive interval quality",
             "",
             _markdown(
                 ["Model", "Raw NLL", "Calibrated NLL", "PICP95", "MPIW95", "Calibration error"],
                 probability_table_rows,
             ),
-            "",
-            "## Uncertainty-error ranking on the two objectives",
-            "",
-            _markdown(
-                ["Model", "Uncertainty", "Spearman", "AUROC", "Top-20% enrichment"],
-                utility_table_rows,
-            ),
-            "",
-            "The MMoE single member has no epistemic component; its ranking row uses conditional residual variance and must not be interpreted as model uncertainty. Cross-method ranking values describe each model's own error and do not establish active-learning superiority.",
         ]
     )
-    (OUTPUT_DIR / "TABLE5_AND_UNCERTAINTY.md").write_text(
+    (OUTPUT_DIR / "TABLE6_TABLE7.md").write_text(
         report + "\n",
         encoding="utf-8",
     )
-    print("Table 5 results written to", OUTPUT_DIR, flush=True)
+    print("Tables 6 and 7 written to", OUTPUT_DIR, flush=True)
 
 
 if __name__ == "__main__":

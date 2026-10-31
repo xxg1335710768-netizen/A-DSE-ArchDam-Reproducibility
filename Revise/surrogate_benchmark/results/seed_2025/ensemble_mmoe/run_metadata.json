@@ -140,5 +140,5 @@
     "calibration": 80,
     "independent_test": 80
   },
-  "published_from": "D:\\Projects_Manage\\Proj_GX_new\\DDS_experiments\\Revise\\surrogate_benchmark\\results_de_mmoe_mean_debug\\seed_2025\\group_balanced_macro_det_config_5members"
+  "public_artifact": "formal seed-2025 DE-MMoE checkpoint"
 }

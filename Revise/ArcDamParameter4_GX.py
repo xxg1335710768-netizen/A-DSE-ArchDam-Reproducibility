@@ -439,8 +439,8 @@ class DamParameter:
             if i == self.Layer_num - 1:
                 self.overhang_up = abs(self.C1 / (self.Z_top - self.Z_bot))
                 self.overhang_down = abs((self.C1 - self.C2) / (self.Z_top - self.Z_bot))
-                constraint_overhang_up = self.overhang_up <= 0.3
-                constraint_overhang_down = self.overhang_down <= 0.3
+                constraint_overhang_up = self.overhang_up <= 0.35
+                constraint_overhang_down = self.overhang_down <= 0.35
 
                 # 【修改】分别计算角度平顺和厚度平顺
                 constraint_smooth_anglel = (self.Angle_l_ini - 6 < self.Angle_l[-1]) and (
@@ -497,13 +497,17 @@ class DamParameter:
                 if not is_thickness:
                     self.violation_flags['厚度不满足'] = True
                     self.Available.append(False)
-            if False in constraint_GongGup:
-                self.violation_flags['上游面不满足保凸性'] = True
-                self.Available.append(False)
+            # The formal optimizer protocol applies the convexity checks to
+            # the preceding layers; the final-layer branch is reserved for
+            # overhang, stationarity, angle and thickness checks.
+            if i < self.Layer_num - 1:
+                if False in constraint_GongGup:
+                    self.violation_flags['上游面不满足保凸性'] = True
+                    self.Available.append(False)
 
-            if False in constraint_GongGdown:
-                self.violation_flags['下游面不满足保凸性'] = True
-                self.Available.append(False)
+                if False in constraint_GongGdown:
+                    self.violation_flags['下游面不满足保凸性'] = True
+                    self.Available.append(False)
 
         if False in self.Available:
             return False

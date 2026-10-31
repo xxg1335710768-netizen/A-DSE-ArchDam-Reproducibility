@@ -17,7 +17,7 @@
   "gate_relative_error_limit": 0.01,
   "representativeness_threshold": 0.01,
   "uncertainty_batch_size": 3,
-  "strict_duplicate_distance": 1e-08,
+  "strict_duplicate_distance": 1E-08,
   "uncertainty_diversity_distance": 0.025,
   "uncertainty_weight_floor": 0.2,
   "maximum_successful_fe_count": null,
@@ -47,11 +47,12 @@
   "accuracy_trigger_enabled": true,
   "acquisition_seed": 2025,
   "comparison_reference": "Same as the previous Full experiment; only NSGA-II population and generations change from 100x100 to 200x200. Historical Pareto fronts are logged for post-analysis only and never affect optimization.",
-  "dataset": "E:\\Proj\\GX\\Revise\\dataset\\SurrogateDataset.xlsx",
+  "dataset": "Revise/dataset/SurrogateDataset.xlsx",
   "dataset_rows": "TrainX/TrainY rows 0:80",
   "independent_test_usage": "not used",
-  "template_model": "E:\\Proj\\GX\\Revise\\surrogate_benchmark\\results\\seed_2025\\ensemble_mmoe\\fitted_model.pt",
+  "template_model": "Revise/surrogate_benchmark/results/seed_2025/ensemble_mmoe/fitted_model.pt",
   "device": "cuda",
   "acquisition_rule": "weighted geometric mean of two-objective model uncertainty",
-  "accuracy_gate_role": "blocks A-DSE update until the three-point RMS gate passes"
+  "accuracy_gate_role": "blocks A-DSE update until the three-point RMS gate passes",
+  "public_comparison_status": "formal_200x200"
 }

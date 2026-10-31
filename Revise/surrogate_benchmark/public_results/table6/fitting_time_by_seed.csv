@@ -1,0 +1,36 @@
+seed,method,wall_seconds,wall_minutes,selected_config,diagnostics
+2025,GPR,208.68943789997138,3.478157298332856,"{""kernel"": ""matern52"", ""alpha"": 0.01, ""n_restarts_optimizer"": 2}","{""fitted_outputs"": 41}"
+2026,GPR,251.1790817999863,4.1863180299997715,"{""kernel"": ""matern52"", ""alpha"": 0.01, ""n_restarts_optimizer"": 2}","{""fitted_outputs"": 41}"
+2027,GPR,235.62823600001866,3.9271372666669775,"{""kernel"": ""matern52"", ""alpha"": 0.01, ""n_restarts_optimizer"": 2}","{""fitted_outputs"": 41}"
+2028,GPR,237.00500390003435,3.950083398333906,"{""kernel"": ""matern52"", ""alpha"": 0.01, ""n_restarts_optimizer"": 2}","{""fitted_outputs"": 41}"
+2029,GPR,252.75311619997956,4.212551936666326,"{""kernel"": ""matern52"", ""alpha"": 0.01, ""n_restarts_optimizer"": 2}","{""fitted_outputs"": 41}"
+2025,XGB,67.65939340001205,1.1276565566668675,"{""max_depth"": 3, ""learning_rate"": 0.03, ""n_estimators"": 1000, ""subsample"": 0.9, ""colsample_bytree"": 0.9}","{""best_iteration_per_output"": [997, 999, 997, 999, 931, 999, 992, 999, 458, 998, 988, 982, 995, 984, 973, 995, 996, 997, 998, 696, 731, 586, 277, 777, 999, 696, 999, 996, 994, 998, 999, 999, 862, 909, 730, 629, 997, 889, 538, 998, 586]}"
+2026,XGB,64.48996799997985,1.0748327999996643,"{""max_depth"": 3, ""learning_rate"": 0.03, ""n_estimators"": 1000, ""subsample"": 0.9, ""colsample_bytree"": 0.9}","{""best_iteration_per_output"": [775, 998, 710, 974, 995, 995, 988, 998, 708, 905, 621, 662, 969, 989, 984, 985, 757, 616, 999, 999, 688, 994, 308, 537, 925, 704, 983, 997, 955, 777, 999, 687, 535, 830, 864, 999, 723, 999, 551, 688, 629]}"
+2027,XGB,67.52579599997262,1.125429933332877,"{""max_depth"": 3, ""learning_rate"": 0.03, ""n_estimators"": 1000, ""subsample"": 0.9, ""colsample_bytree"": 0.9}","{""best_iteration_per_output"": [998, 999, 870, 951, 722, 996, 998, 998, 990, 719, 984, 999, 999, 999, 994, 999, 996, 999, 998, 982, 953, 626, 852, 755, 659, 888, 998, 566, 997, 998, 999, 996, 917, 767, 529, 985, 803, 578, 652, 737, 791]}"
+2028,XGB,48.38378690002719,0.8063964483337865,"{""max_depth"": 3, ""learning_rate"": 0.05, ""n_estimators"": 1000, ""subsample"": 0.9, ""colsample_bytree"": 0.9}","{""best_iteration_per_output"": [748, 999, 601, 841, 479, 486, 730, 968, 524, 504, 623, 436, 599, 557, 454, 656, 999, 376, 279, 527, 631, 416, 586, 402, 427, 521, 999, 797, 996, 999, 995, 638, 325, 967, 317, 451, 998, 401, 269, 333, 204]}"
+2029,XGB,64.5590345999808,1.0759839099996802,"{""max_depth"": 3, ""learning_rate"": 0.03, ""n_estimators"": 1000, ""subsample"": 0.9, ""colsample_bytree"": 0.9}","{""best_iteration_per_output"": [993, 997, 990, 710, 954, 998, 989, 999, 878, 718, 869, 755, 998, 987, 937, 889, 987, 998, 982, 982, 998, 826, 696, 664, 799, 477, 999, 725, 999, 999, 999, 687, 438, 639, 450, 982, 642, 782, 628, 551, 516]}"
+2025,MLP,163.56538370001363,2.7260897283335606,"{""hidden_dims"": [128, 64], ""dropout"": 0.1}","{""best_epoch"": 429, ""epochs_completed"": 459, ""internal_fit_seconds"": 161.94634390005376}"
+2026,MLP,125.75293070002226,2.0958821783337043,"{""hidden_dims"": [64, 64], ""dropout"": 0.1}","{""best_epoch"": 360, ""epochs_completed"": 390, ""internal_fit_seconds"": 125.73688670003321}"
+2027,MLP,140.01407560001826,2.333567926666971,"{""hidden_dims"": [128, 128], ""dropout"": 0.2}","{""best_epoch"": 327, ""epochs_completed"": 357, ""internal_fit_seconds"": 139.99468800000614}"
+2028,MLP,144.18564559996594,2.403094093332766,"{""hidden_dims"": [64, 64], ""dropout"": 0.1}","{""best_epoch"": 415, ""epochs_completed"": 445, ""internal_fit_seconds"": 144.1690682999906}"
+2029,MLP,142.18158969999058,2.36969316166651,"{""hidden_dims"": [64, 64], ""dropout"": 0.1}","{""best_epoch"": 412, ""epochs_completed"": 442, ""internal_fit_seconds"": 142.16305550001562}"
+2025,PCA-GPR,100.32542629999807,1.6720904383333013,"{""kernel"": ""matern32"", ""explained_variance"": 0.995, ""alpha"": 1e-06, ""n_restarts_optimizer"": 2}","{""retained_pca_components"": 13}"
+2026,PCA-GPR,104.06112620001659,1.7343521033336098,"{""kernel"": ""matern32"", ""explained_variance"": 0.995, ""alpha"": 1e-06, ""n_restarts_optimizer"": 2}","{""retained_pca_components"": 13}"
+2027,PCA-GPR,105.47260679997271,1.7578767799995452,"{""kernel"": ""matern32"", ""explained_variance"": 0.995, ""alpha"": 1e-06, ""n_restarts_optimizer"": 2}","{""retained_pca_components"": 13}"
+2028,PCA-GPR,108.30045280000195,1.805007546666699,"{""kernel"": ""matern32"", ""explained_variance"": 0.995, ""alpha"": 1e-06, ""n_restarts_optimizer"": 2}","{""retained_pca_components"": 13}"
+2029,PCA-GPR,98.0903374000336,1.6348389566672268,"{""kernel"": ""matern52"", ""explained_variance"": 0.995, ""alpha"": 1e-06, ""n_restarts_optimizer"": 2}","{""retained_pca_components"": 13}"
+2025,MT-MLP,62.565057899977546,1.0427509649996258,"{""hidden_dims"": [128, 128], ""dropout"": 0.1}","{""best_epoch"": 289, ""epochs_completed"": 319, ""internal_fit_seconds"": 62.55352330004098}"
+2026,MT-MLP,68.6029136000434,1.1433818933340565,"{""hidden_dims"": [128, 128], ""dropout"": 0.1}","{""best_epoch"": 320, ""epochs_completed"": 350, ""internal_fit_seconds"": 68.59258110000519}"
+2027,MT-MLP,85.01486930000829,1.4169144883334714,"{""hidden_dims"": [128, 128], ""dropout"": 0.1}","{""best_epoch"": 411, ""epochs_completed"": 441, ""internal_fit_seconds"": 85.004334199999}"
+2028,MT-MLP,73.36170579999452,1.2226950966665755,"{""hidden_dims"": [128, 128], ""dropout"": 0.1}","{""best_epoch"": 345, ""epochs_completed"": 375, ""internal_fit_seconds"": 73.35148259997368}"
+2029,MT-MLP,69.76615969999693,1.1627693283332823,"{""hidden_dims"": [128, 128], ""dropout"": 0.1}","{""best_epoch"": 329, ""epochs_completed"": 359, ""internal_fit_seconds"": 69.75600200000918}"
+2025,MMoE,39.60972369997762,0.6601620616662937,See fresh MMoE runtime metadata,
+2026,MMoE,34.429689200012945,0.5738281533335491,See fresh MMoE runtime metadata,
+2027,MMoE,31.84303109999746,0.5307171849999577,See fresh MMoE runtime metadata,
+2028,MMoE,33.54979840002488,0.5591633066670814,See fresh MMoE runtime metadata,
+2029,MMoE,50.16744729998754,0.8361241216664591,See fresh MMoE runtime metadata,
+2025,DE-MMoE,44.70344439998735,0.7450574066664558,See fresh MMoE runtime metadata,
+2026,DE-MMoE,40.42210870003328,0.6737018116672213,See fresh MMoE runtime metadata,
+2027,DE-MMoE,40.069966899987776,0.667832781666463,See fresh MMoE runtime metadata,
+2028,DE-MMoE,42.22533350001322,0.7037555583335536,See fresh MMoE runtime metadata,
+2029,DE-MMoE,55.376628199999686,0.922943803333328,See fresh MMoE runtime metadata,
