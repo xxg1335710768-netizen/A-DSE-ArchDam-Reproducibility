@@ -1,2 +1,1 @@
-"""Revision code for the arch-dam surrogate and optimization experiments."""
-
+"""Arch-dam surrogate and optimization experiments."""

@@ -1,21 +1,4 @@
-"""MMoE models with explicit, testable uncertainty semantics.
-
-The legacy implementation samples both a Gaussian expert representation and a
-Gaussian task output, then reports the empirical standard deviation of those
-draws. That quantity is a predictive standard deviation, but it does not by
-itself identify epistemic uncertainty because no posterior over network weights
-is learned.
-
-This module retains the legacy model for controlled comparisons and provides
-two defensible alternatives:
-
-* MC-dropout MMoE: epistemic variance is the variance of predictive means over
-  dropout masks; expected task variance is the conditional residual component.
-* Deep-ensemble MMoE: epistemic variance is disagreement between independently
-  trained members; expected task variance is the conditional residual component.
-
-In both cases total predictive variance follows the law of total variance.
-"""
+"""Probabilistic MMoE models and predictive-variance utilities."""
 
 from __future__ import annotations
 
@@ -27,7 +10,6 @@ from typing import Iterable, Sequence
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 
 
@@ -63,70 +45,6 @@ def gaussian_nll(
         + 0.5 * logvar
         + 0.5 * math.log(2.0 * math.pi)
     ).mean()
-
-
-class LegacyGaussianExpert(nn.Module):
-    """Original input-dependent Gaussian latent expert used as the baseline."""
-
-    def __init__(self, input_dim: int, hidden_dim: int, activation: str = "swish") -> None:
-        super().__init__()
-        self.fc_mu = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            _activation(activation),
-            nn.Linear(hidden_dim, hidden_dim),
-        )
-        self.fc_logvar = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            _activation(activation),
-            nn.Linear(hidden_dim, hidden_dim),
-        )
-
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        mu = self.fc_mu(x)
-        logvar = self.fc_logvar(x)
-        sample = mu + torch.randn_like(mu) * torch.exp(0.5 * logvar)
-        return sample, mu, logvar
-
-
-class LegacyLatentMMoE(nn.Module):
-    """Exact architecture of the submitted code, retained for fair comparison."""
-
-    def __init__(
-        self,
-        d_in: int,
-        num_experts: int,
-        expert_hidden: int,
-        tower_hidden: int,
-        num_tasks: int,
-        activation: str = "swish",
-    ) -> None:
-        super().__init__()
-        self.experts = nn.ModuleList(
-            [LegacyGaussianExpert(d_in, expert_hidden, activation) for _ in range(num_experts)]
-        )
-        self.gates = nn.ModuleList([nn.Linear(d_in, num_experts) for _ in range(num_tasks)])
-        self.towers = nn.ModuleList(
-            [
-                nn.Sequential(
-                    nn.Linear(expert_hidden, tower_hidden),
-                    _activation(activation),
-                    nn.Linear(tower_hidden, 2),
-                )
-                for _ in range(num_tasks)
-            ]
-        )
-
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        samples = torch.stack([expert(x)[0] for expert in self.experts], dim=1)
-        means: list[torch.Tensor] = []
-        logvars: list[torch.Tensor] = []
-        for gate, tower in zip(self.gates, self.towers):
-            weights = F.softmax(gate(x), dim=-1)
-            fused = torch.bmm(weights.unsqueeze(1), samples).squeeze(1)
-            out = tower(fused)
-            means.append(out[:, :1])
-            logvars.append(out[:, 1:2])
-        return torch.cat(means, dim=1), torch.cat(logvars, dim=1)
 
 
 class DeterministicExpert(nn.Module):
@@ -263,62 +181,6 @@ def train_model(
 
 def _as_tensor(x: np.ndarray, device: str) -> torch.Tensor:
     return torch.as_tensor(np.asarray(x, dtype=np.float32), dtype=torch.float32, device=device)
-
-
-@torch.no_grad()
-def legacy_original_sampling(
-    model: LegacyLatentMMoE,
-    x: np.ndarray,
-    *,
-    mc_samples: int,
-    device: str = "cpu",
-) -> PredictiveMoments:
-    """Reproduce the submitted inference: sample latent state and task output."""
-    model.to(device).eval()
-    xt = _as_tensor(x, device)
-    samples: list[np.ndarray] = []
-    for _ in range(mc_samples):
-        mu, logvar = model(xt)
-        draw = mu + torch.randn_like(mu) * torch.exp(0.5 * logvar.clamp(LOGVAR_MIN, LOGVAR_MAX))
-        samples.append(draw.cpu().numpy())
-    draws = np.stack(samples, axis=0)
-    total_var = np.maximum(draws.var(axis=0, ddof=0), 1e-12)
-    return PredictiveMoments(
-        mean=draws.mean(axis=0),
-        epistemic_var=total_var,
-        aleatoric_var=np.zeros_like(total_var),
-    )
-
-
-@torch.no_grad()
-def legacy_moment_decomposition(
-    model: LegacyLatentMMoE,
-    x: np.ndarray,
-    *,
-    mc_samples: int,
-    device: str = "cpu",
-) -> PredictiveMoments:
-    """Correct the legacy predictive variance by the law of total variance.
-
-    ``epistemic_var`` here is retained as a compatibility field. Scientifically
-    it is variance induced by the stochastic latent representation, not a
-    posterior-over-weights estimate and should be described that way.
-    """
-    model.to(device).eval()
-    xt = _as_tensor(x, device)
-    means: list[np.ndarray] = []
-    conditional_vars: list[np.ndarray] = []
-    for _ in range(mc_samples):
-        mu, logvar = model(xt)
-        means.append(mu.cpu().numpy())
-        conditional_vars.append(torch.exp(logvar.clamp(LOGVAR_MIN, LOGVAR_MAX)).cpu().numpy())
-    mean_stack = np.stack(means, axis=0)
-    var_stack = np.stack(conditional_vars, axis=0)
-    return PredictiveMoments(
-        mean=mean_stack.mean(axis=0),
-        epistemic_var=np.maximum(mean_stack.var(axis=0, ddof=0), 0.0),
-        aleatoric_var=np.maximum(var_stack.mean(axis=0), 1e-12),
-    )
 
 
 def _enable_mc_dropout(model: nn.Module) -> None:

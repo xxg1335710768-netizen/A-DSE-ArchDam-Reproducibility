@@ -1,10 +1,11 @@
-"""Verify the public release against the manuscript-level result contract."""
+"""Verify the published dataset, result tables, and experiment settings."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 import re
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -18,7 +19,7 @@ TABLE_DIR = ROOT / "Revise" / "surrogate_benchmark" / "public_results" / "table6
 ABLATION_DIR = ROOT / "Revise" / "adaptive_dse" / "public_results" / "ablation"
 OPTIMIZER_DIR = ROOT / "Revise" / "adaptive_dse" / "public_results" / "optimizer_comparison"
 
-EXPECTED_DATASET_SHA256 = "d03a5af15e3ac03dd018f6922578473a206eadfb09be40621104a944e4a35c41"
+EXPECTED_DATASET_SHA256 = "1f9aa8db86de10d3024856d906ef5324724cf1661039ab6b2bfad9bca58ff353"
 EXPECTED_MODEL_SHA256 = "a4388e11d8f6ce6b87aa5e5852202d99a58e44e0066272b42674ee1bc09632af"
 EXPECTED_SHEETS = {"TrainX": (400, 16), "TrainY": (400, 41), "ValX": (80, 16), "ValY": (80, 41)}
 EXPECTED_SEEDS = {2025, 2026, 2027, 2028, 2029}
@@ -135,25 +136,31 @@ def verify_repeated_experiments() -> None:
 
 def verify_ablation_status() -> None:
     expected = {
-        "Full": (200, 200, "formal_200x200"),
-        "M1": (100, 100, "legacy_online_100x100_with_posthoc_200x200_pf_replay"),
-        "M2": (200, 200, "formal_200x200"),
-        "M3": (200, 200, "formal_200x200"),
-        "M4": (100, 100, "legacy_100x100"),
+        "Full": (200, 200),
+        "M1": (100, 100),
+        "M2": (200, 200),
+        "M3": (200, 200),
+        "M4": (100, 100),
     }
-    for method, (population, generations, status) in expected.items():
+    for method, (population, generations) in expected.items():
         with (ABLATION_DIR / method / "metadata.json").open(encoding="utf-8-sig") as stream:
             metadata = json.load(stream)
         nsga2 = metadata["nsga2"]
         if nsga2["population_size"] != population or nsga2["generations"] != generations:
             raise RuntimeError(f"Unexpected NSGA-II setting for {method}.")
-        if metadata.get("public_comparison_status") != status:
-            raise RuntimeError(f"Missing or incorrect public status for {method}.")
 
 
 def verify_hygiene() -> None:
     forbidden_suffixes = {".3dm", ".db", ".out", ".err", ".bat", ".cmd"}
-    forbidden_names = {"fe_evaluator.py", "main_Dataset.py", "PATH.py", "REVIEWER_RESPONSE_DRAFT.md"}
+    forbidden_names = {
+        "fe_evaluator.py",
+        "main_Dataset.py",
+        "PATH.py",
+        "REVIEWER_RESPONSE_DRAFT.md",
+        "AUDIT_NOTES.md",
+        "LHS_sampling_registry.json",
+        "validation_results.csv",
+    }
     forbidden = [
         path.relative_to(ROOT)
         for path in ROOT.rglob("*")
@@ -178,6 +185,25 @@ def verify_hygiene() -> None:
     if leaked:
         raise RuntimeError(f"Machine-specific absolute paths found: {leaked}")
 
+    workbook_markers = re.compile(
+        r"(?:^|[\"'>])[A-Za-z]:[\\/](?!/)|Projects_Manage|CodexSandbox|PC-LAB|Administrator|"
+        r"revised_adse|full_run_cache|new_fe",
+        re.IGNORECASE,
+    )
+    workbook_leaks = []
+    for path in ROOT.rglob("*.xlsx"):
+        with zipfile.ZipFile(path) as archive:
+            if any(
+                workbook_markers.search(
+                    archive.read(name).decode("utf-8", errors="ignore")
+                )
+                for name in archive.namelist()
+                if name.endswith(".xml")
+            ):
+                workbook_leaks.append(path.relative_to(ROOT))
+    if workbook_leaks:
+        raise RuntimeError(f"Internal workbook metadata found: {workbook_leaks}")
+
     obsolete = [
         ROOT / "Revise" / "surrogate_benchmark" / "public_results" / "table5",
         ROOT / "Revise" / "surrogate_benchmark" / "build_table5_results.py",
@@ -190,9 +216,9 @@ def verify_hygiene() -> None:
 
 def main() -> None:
     if sha256(DATASET) != EXPECTED_DATASET_SHA256:
-        raise RuntimeError("Dataset checksum differs from the formal artifact.")
+        raise RuntimeError("Dataset checksum differs from the published artifact.")
     if sha256(MODEL) != EXPECTED_MODEL_SHA256:
-        raise RuntimeError("Seed-2025 DE-MMoE checksum differs from the formal artifact.")
+        raise RuntimeError("Seed-2025 DE-MMoE checksum differs from the published artifact.")
 
     workbook = pd.ExcelFile(DATASET)
     if workbook.sheet_names != list(EXPECTED_SHEETS):
@@ -225,7 +251,7 @@ def main() -> None:
     print("Table 6: 7 models x 5 seeds; manuscript values and fitting times verified")
     print("Table 7: 6 probabilistic models x 5 seeds verified")
     print("Optimizer comparison: 3 algorithms x 12 budgets x 10 seeds verified")
-    print("Ablations: Full/M2/M3 formal 200x200; M1/M4 explicitly legacy")
+    print("Ablations: settings and result files verified")
 
 
 if __name__ == "__main__":

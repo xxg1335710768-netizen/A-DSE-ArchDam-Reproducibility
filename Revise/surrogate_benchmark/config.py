@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 BENCHMARK_DIR = Path(__file__).resolve().parent
-REVISION_DIR = BENCHMARK_DIR.parent
-DATASET_PATH = REVISION_DIR / "dataset" / "SurrogateDataset.xlsx"
+PACKAGE_DIR = BENCHMARK_DIR.parent
+DATASET_PATH = PACKAGE_DIR / "dataset" / "SurrogateDataset.xlsx"
 RESULTS_DIR = BENCHMARK_DIR / "results"
 SPLIT_DIR = BENCHMARK_DIR / "splits"
 
@@ -69,7 +69,7 @@ MLP_GRID = tuple(
 
 # MC Dropout is an uncertainty-estimation method rather than only a training
 # regularizer.  Zero dropout would make its predictive variance identically
-# zero, so the formal probability benchmark uses a separate positive-rate
+# zero, so the probability benchmark uses a separate positive-rate
 # grid with the same nine-configuration budget as the other model families.
 MC_DROPOUT_GRID = tuple(
     {"hidden_dims": hidden_dims, "dropout": dropout}

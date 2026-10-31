@@ -43,7 +43,7 @@ MMOE_RUNTIME_DIR = BASE_DIR / "fixed_runtime_mmoe_de"
 DEFAULT_OUTPUT = BASE_DIR / "fixed_runtime_all_models"
 
 # Labels match the manuscript table.  MLP and MT-MLP use the positive-dropout
-# configurations from the formal MC-Dropout experiment, but stochastic
+# configurations from the MC-Dropout experiment, but stochastic
 # inference is deliberately excluded from final model fitting time.
 METHODS: dict[str, tuple[Path, str, str]] = {
     "GPR": (BASE_RESULTS, "gpr", "gpr"),
@@ -188,11 +188,6 @@ def _summary(frame: pd.DataFrame) -> pd.DataFrame:
                 "wall_minutes_std": (
                     float(values.std(ddof=1)) if len(values) > 1 else np.nan
                 ),
-                "wall_minutes_variance": (
-                    float(values.var(ddof=1)) if len(values) > 1 else np.nan
-                ),
-                "wall_minutes_median": float(values.median()),
-                "wall_minutes_total_five_seeds": float(values.sum()),
             }
         )
     return pd.DataFrame(rows)
@@ -230,19 +225,19 @@ def _write_report(output: Path, summary: pd.DataFrame) -> None:
     for _, row in summary.iterrows():
         rows.append(
             f"| {row['method']} | {row['wall_minutes_mean']:.3f} ± "
-            f"{row['wall_minutes_std']:.3f} | {row['wall_minutes_total_five_seeds']:.3f} |"
+            f"{row['wall_minutes_std']:.3f} |"
         )
     report = "\n".join(
         [
-            "# Unified fixed-configuration runtime benchmark",
+            "# Fixed-configuration fitting time",
             "",
-            "All entries are newly measured final-fitting wall-clock times after hyperparameters were frozen.",
-            "The timed region excludes hyperparameter search, data preparation, test inference, MC-Dropout sampling, metric calculation and result serialization.",
-            "Every individual model uses one numerical CPU thread. The five DE-MMoE members use five isolated one-thread CPU processes in parallel; process startup is included in its wall time.",
-            "Values are mean ± sample standard deviation over the five frozen development partitions.",
+            "The timed region includes model construction, training, early stopping, and checkpoint restoration.",
+            "Hyperparameter search, data preparation, inference, metric calculation, and file output are excluded.",
+            "Each model uses one CPU thread. The five DE-MMoE members run in five one-thread processes.",
+            "Values are mean ± sample standard deviation across seeds 2025--2029.",
             "",
-            "| Model | Final fitting time (min) | Five-seed total (min) |",
-            "| --- | ---: | ---: |",
+            "| Model | Fitting time (min) |",
+            "|---|---:|",
             *rows,
         ]
     )

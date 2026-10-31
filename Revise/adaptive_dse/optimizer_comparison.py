@@ -1,18 +1,10 @@
-"""Fair constrained comparison of NSGA-II, batch MOEA/D and MOPSO-CD.
-
-One fixed five-member DE-MMoE and one engineering constraint evaluator are
-shared by all algorithms.  Every seed is a single continuous 120,000-evaluation
-trajectory with twelve cumulative checkpoints.  No FE, AL, or A-DSE operation is
-imported or executed here.
-"""
+"""Constrained comparison of NSGA-II, batch MOEA/D, and MOPSO-CD."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 import hashlib
 import json
-import os
 from pathlib import Path
 import platform
 import time
@@ -59,14 +51,10 @@ from .optimizer_constraints import (
 )
 HERE = Path(__file__).resolve().parent
 CONFIG_PATH = HERE / "optimizer_comparison_config.json"
-REGISTRY_PATH = HERE.parent / "LHS_sampling_registry.json"
+BOUNDS_PATH = HERE.parent / "design_bounds.json"
 ALGORITHMS = ("NSGA-II", "MOEA/D", "MOPSO-CD")
 HV_REFERENCE_NORMALIZED = np.ones(OBJECTIVE_COUNT, dtype=np.float64)
 FLOAT_TOLERANCE = 1e-12
-
-
-def _timestamp() -> str:
-    return datetime.now().astimezone().isoformat(timespec="seconds")
 
 
 def _safe_name(algorithm: str) -> str:
@@ -119,7 +107,7 @@ def load_comparison_config(path: str | Path = CONFIG_PATH) -> dict:
         raise ValueError(f"Comparison config misses fields: {missing}")
     population_size = int(config["population_size"])
     if population_size != 200:
-        raise ValueError("The formal comparison requires population/swarm size 200.")
+        raise ValueError("The comparison requires population/swarm size 200.")
     budgets = tuple(map(int, config["budgets"]))
     if budgets != (
         2_400,
@@ -135,10 +123,10 @@ def load_comparison_config(path: str | Path = CONFIG_PATH) -> dict:
         100_000,
         120_000,
     ):
-        raise ValueError("The twelve formal evaluation budgets were changed.")
+        raise ValueError("The twelve evaluation budgets were changed.")
     seeds = tuple(map(int, config["seeds"]))
     if seeds != tuple(range(2025, 2035)):
-        raise ValueError("The ten paired formal seeds must be 2025 through 2034.")
+        raise ValueError("The ten paired seeds must be 2025 through 2034.")
     if any(value % population_size for value in budgets):
         raise ValueError("Every checkpoint must align with a 200-candidate batch.")
     if int(config["moead"]["reference_directions"]) != population_size:
@@ -875,7 +863,6 @@ def _run_one(
     with marker.open("w", encoding="utf-8") as stream:
         json.dump(
             {
-                "completed_at": _timestamp(),
                 "algorithm": settings.algorithm,
                 "seed": settings.seed,
                 "actual_evaluations": problem.evaluation_count,
@@ -1214,7 +1201,7 @@ def _validate_definition(
     split = metadata.get("split", {})
     if [split.get(name) for name in ("train", "validation", "calibration", "independent_test")] != [256, 64, 80, 80]:
         raise ValueError("The fixed model data split is not 256/64/80 + 80.")
-    if int(metadata.get("model_diagnostics", {}).get("member_count", -1)) != 5:
+    if int(metadata.get("member_count", -1)) != 5:
         raise ValueError("The common checkpoint is not a five-member ensemble.")
     if int(metadata.get("seed", -1)) != int(config["model_split_seed"]):
         raise ValueError("Checkpoint seed and configured model split seed differ.")
@@ -1237,7 +1224,6 @@ def _write_manifest(
     seeds: Sequence[int],
 ) -> None:
     manifest = {
-        "created_at": _timestamp(),
         "configuration": str(CONFIG_PATH),
         "model_checkpoint": str(model_path),
         "model_checkpoint_sha256": _sha256(model_path),
@@ -1250,12 +1236,8 @@ def _write_manifest(
         "independent_test_usage": "excluded",
         "finite_element_evaluations": 0,
         "device": device,
-        "platform": platform.platform(),
-        "processor": platform.processor(),
         "python": platform.python_version(),
         "torch": torch.__version__,
-        "cuda": torch.version.cuda,
-        "cpu_count": os.cpu_count(),
         "torch_threads": torch.get_num_threads(),
         "algorithms": list(ALGORITHMS),
         "budgets": list(map(int, budgets)),
@@ -1336,7 +1318,7 @@ def run_benchmark(
     objective_minimum, objective_maximum, output_names = _validate_definition(
         config, model_path, metadata_path, dataset_path
     )
-    lower, upper = load_reference_bounds(REGISTRY_PATH)
+    lower, upper = load_reference_bounds(BOUNDS_PATH)
     constraints = EngineeringConstraintEvaluator(output_names)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     torch.set_num_threads(int(config["timing"]["torch_threads"]))

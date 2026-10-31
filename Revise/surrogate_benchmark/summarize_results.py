@@ -1,4 +1,4 @@
-"""Aggregate the five-seed formal benchmark and audit result completeness."""
+"""Aggregate the five-seed surrogate benchmark."""
 
 from __future__ import annotations
 
@@ -102,12 +102,12 @@ def _require_complete_results() -> None:
     if missing:
         preview = "\n".join(missing[:20])
         raise RuntimeError(
-            f"Formal benchmark is incomplete ({len(missing)} missing files):\n{preview}"
+            f"Benchmark is incomplete ({len(missing)} missing files):\n{preview}"
         )
     if invalid:
         preview = "\n".join(invalid[:20])
         raise RuntimeError(
-            f"Formal benchmark has invalid prediction artifacts ({len(invalid)}):\n{preview}"
+            f"Benchmark has invalid prediction artifacts ({len(invalid)}):\n{preview}"
         )
 
 
@@ -469,7 +469,7 @@ def main() -> None:
             "minimum_s3_rmse",
         ],
     ).to_csv(RESULTS_DIR / "aggregate_control_stress.csv", index=False)
-    print("Formal benchmark summaries written to", RESULTS_DIR, flush=True)
+    print("Benchmark summaries written to", RESULTS_DIR, flush=True)
 
 
 if __name__ == "__main__":

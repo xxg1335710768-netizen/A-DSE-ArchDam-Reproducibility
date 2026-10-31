@@ -1,6 +1,6 @@
-"""Fresh fixed-architecture runtime benchmark for MMoE and DE-MMoE.
+"""Fixed-architecture fitting-time benchmark for MMoE and DE-MMoE.
 
-This benchmark deliberately does not reuse historical timing metadata.  For
+For
 each frozen data split it trains a new single-member MMoE and a new five-member
 DE-MMoE on CPU. Each member uses one numerical thread, and the five ensemble
 members may run in five isolated processes. The architecture is
@@ -286,12 +286,11 @@ def _write_outputs(
         )
     report = "\n".join(
         [
-            "# Fresh MMoE and DE-MMoE runtime benchmark",
+            "# MMoE and DE-MMoE fitting time",
             "",
-            "The models were newly trained for this benchmark; no historical timing value was reused.",
-            "Architectures were frozen before timing. Each member used one numerical CPU thread; independent DE members used isolated processes.",
+            "Architectures are fixed before timing. Each member uses one CPU thread; independent DE members use isolated processes.",
             "Wall-clock time covers process startup, model construction, data-loader/optimizer setup, all epochs, early stopping, and best-checkpoint restoration. Hyperparameter search is excluded.",
-            "Wall-clock time is the manuscript-facing measure. Cumulative member time is retained as the total training-work audit value.",
+            "Table 6 uses wall-clock time. Cumulative member time measures total training work.",
             "",
             "| Model | Members | Wall time (min, mean ± SD) | Cumulative member time (min, mean ± SD) | Wall median |",
             "| --- | ---: | ---: | ---: | ---: |",
@@ -299,7 +298,7 @@ def _write_outputs(
             "",
             f"Observed DE-MMoE/MMoE wall-time ratio: {wall_ratio:.3f}; cumulative-member-time ratio: {cumulative_ratio:.3f}.",
             "",
-            "Sample standard deviations are calculated across the five frozen development splits.",
+            "Sample standard deviations are calculated across the five development splits.",
             "These values are fixed-architecture final fitting times and must not be mixed with hyperparameter-search time in one table column.",
         ]
     )
@@ -324,9 +323,9 @@ def main() -> None:
     if unknown:
         raise ValueError(f"Seeds must use the frozen protocol {SEEDS}; got {unknown}")
     if args.threads != 1:
-        raise ValueError("Formal timing must use exactly one numerical thread.")
+        raise ValueError("The timing protocol requires one numerical thread.")
     if args.device != "cpu":
-        raise ValueError("Formal timing is fixed to CPU for comparability.")
+        raise ValueError("The timing protocol uses CPU for comparability.")
     if args.ensemble_workers < 1 or args.ensemble_workers > 5:
         raise ValueError("--ensemble-workers must be between 1 and 5.")
     if args.output.exists() and any(args.output.iterdir()) and not args.overwrite:

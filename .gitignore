@@ -5,8 +5,6 @@ __pycache__/
 venv/
 .idea/
 Revise/adaptive_dse/runs/
-Revise/surrogate_benchmark/smoke_results/
-Revise/surrogate_benchmark/results/seed_2026/
-Revise/surrogate_benchmark/results/seed_2027/
-Revise/surrogate_benchmark/results/seed_2028/
-Revise/surrogate_benchmark/results/seed_2029/
+Revise/surrogate_benchmark/results/seed_*/
+Revise/surrogate_benchmark/sample_size_sensitivity*/
+Revise/surrogate_benchmark/runtime_*/

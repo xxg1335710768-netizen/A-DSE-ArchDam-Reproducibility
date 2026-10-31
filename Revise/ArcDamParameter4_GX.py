@@ -497,7 +497,7 @@ class DamParameter:
                 if not is_thickness:
                     self.violation_flags['厚度不满足'] = True
                     self.Available.append(False)
-            # The formal optimizer protocol applies the convexity checks to
+            # The optimizer applies the convexity checks to
             # the preceding layers; the final-layer branch is reserved for
             # overhang, stationarity, angle and thickness checks.
             if i < self.Layer_num - 1:

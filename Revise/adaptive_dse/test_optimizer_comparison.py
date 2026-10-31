@@ -37,7 +37,7 @@ from .optimizer_constraints import (
     SIGNED_STRESS_UPPER_MPA,
     feasibility_compare,
 )
-from .optimizer_comparison import REGISTRY_PATH
+from .optimizer_comparison import BOUNDS_PATH
 
 
 class _DeterministicToyProblem(Problem):
@@ -68,7 +68,7 @@ class ProtocolDefinitionTests(unittest.TestCase):
         )
         cls.constraints = EngineeringConstraintEvaluator(cls.output_names)
 
-    def test_formal_budgets_seeds_and_population(self) -> None:
+    def test_budgets_seeds_and_population(self) -> None:
         config = load_comparison_config(CONFIG_PATH)
         self.assertEqual(config["population_size"], 200)
         self.assertEqual(
@@ -144,7 +144,7 @@ class ProtocolDefinitionTests(unittest.TestCase):
         self.assertGreater(result.g[0, geometry_count + compression_index], 0.0)
 
     def test_geometry_feasibility_matches_source_checker_on_lhs(self) -> None:
-        lower, upper = load_reference_bounds(REGISTRY_PATH)
+        lower, upper = load_reference_bounds(BOUNDS_PATH)
         points = generate_initial_lhs(314159, lower, upper, 200)
         responses = np.zeros((len(points), 41), dtype=np.float64)
         evaluated = self.constraints.evaluate(points, responses)

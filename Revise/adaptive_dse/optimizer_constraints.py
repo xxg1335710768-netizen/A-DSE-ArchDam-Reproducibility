@@ -81,10 +81,10 @@ class EngineeringConstraintEvaluator:
         if np.any(self.tension_mask == self.compression_mask):
             raise ValueError("Every stress output must map to exactly one limit.")
 
-        revision_directory = Path(__file__).resolve().parents[1]
-        revision_text = str(revision_directory)
-        if revision_text not in sys.path:
-            sys.path.insert(0, revision_text)
+        package_directory = Path(__file__).resolve().parents[1]
+        package_text = str(package_directory)
+        if package_text not in sys.path:
+            sys.path.insert(0, package_text)
         self.parameterization = importlib.import_module("ArcDamParameter4_GX")
 
         nominal_names, _, nominal_scales = self._geometry_margins(

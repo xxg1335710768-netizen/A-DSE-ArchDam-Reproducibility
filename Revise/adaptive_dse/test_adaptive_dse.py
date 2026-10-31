@@ -710,8 +710,8 @@ class AdaptiveDesignSpaceTests(unittest.TestCase):
         )
 
 
-class FormalEnsembleSmokeTest(unittest.TestCase):
-    def test_formal_model_and_gradient_shap(self) -> None:
+class EnsembleSmokeTest(unittest.TestCase):
+    def test_model_and_gradient_shap(self) -> None:
         model_path = (
             Path(__file__).resolve().parents[1]
             / "surrogate_benchmark"

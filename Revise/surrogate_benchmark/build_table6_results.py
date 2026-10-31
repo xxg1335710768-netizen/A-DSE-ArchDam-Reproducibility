@@ -31,7 +31,7 @@ from .models_torch import DeterministicMMoE
 
 BASE_DIR = Path(__file__).resolve().parent
 BASE_RESULTS = BASE_DIR / "results"
-# The public benchmark writes every formal model to one result tree.  The
+# The benchmark writes every model to one result tree. The
 # separate directories used during method development are intentionally not
 # part of the release.
 MC_RESULTS = BASE_RESULTS

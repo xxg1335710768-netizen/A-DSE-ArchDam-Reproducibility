@@ -18,7 +18,7 @@ from .models_torch import (
 
 
 class MCDropoutTests(unittest.TestCase):
-    def test_formal_grid_has_nine_positive_dropout_configurations(self) -> None:
+    def test_probability_grid_has_nine_positive_dropout_configurations(self) -> None:
         self.assertEqual(len(MC_DROPOUT_GRID), 9)
         self.assertTrue(all(config["dropout"] > 0.0 for config in MC_DROPOUT_GRID))
 

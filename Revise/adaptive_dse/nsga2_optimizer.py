@@ -1,4 +1,4 @@
-"""Side-effect-free NSGA-II adapter for the revised A-DSE experiment."""
+"""Side-effect-free NSGA-II adapter for A-DSE."""
 
 from __future__ import annotations
 

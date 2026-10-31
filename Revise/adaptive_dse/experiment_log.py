@@ -1,4 +1,4 @@
-"""Append-only experiment records for revised A-DSE runs."""
+"""Append-only records for A-DSE runs."""
 
 from __future__ import annotations
 

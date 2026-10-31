@@ -42,11 +42,16 @@ from .models_torch import (
 
 
 BASE_DIR = Path(__file__).resolve().parent
-FORMAL_RESULTS = BASE_DIR / "results"
-FORMAL_RUNTIME = BASE_DIR / "runtime_rerun_mmoe_de_formal_5workers"
 DEFAULT_OUTPUT = BASE_DIR / "sample_size_sensitivity"
 BUDGETS = tuple(range(25, DEVELOPMENT_COUNT + 1, 25))
 MEMBER_COUNT = 5
+ARCHITECTURES = {
+    2025: {"num_experts": 2, "expert_hidden": 128, "tower_hidden": 32},
+    2026: {"num_experts": 2, "expert_hidden": 128, "tower_hidden": 32},
+    2027: {"num_experts": 2, "expert_hidden": 128, "tower_hidden": 64},
+    2028: {"num_experts": 2, "expert_hidden": 128, "tower_hidden": 32},
+    2029: {"num_experts": 2, "expert_hidden": 64, "tower_hidden": 32},
+}
 
 
 @dataclass(frozen=True)
@@ -142,16 +147,9 @@ def _training_config(smoke: bool) -> TorchTrainingConfig:
 
 
 def _selected_architecture(seed: int) -> dict[str, int]:
-    path = FORMAL_RESULTS / f"seed_{seed}" / "deterministic_mmoe" / "run_metadata.json"
-    if not path.exists():
-        raise FileNotFoundError(f"Missing frozen architecture metadata: {path}")
-    with path.open("r", encoding="utf-8") as file:
-        selected = json.load(file)["selected_config"]
-    return {
-        "num_experts": int(selected["num_experts"]),
-        "expert_hidden": int(selected["expert_hidden"]),
-        "tower_hidden": int(selected["tower_hidden"]),
-    }
+    if seed not in ARCHITECTURES:
+        raise ValueError(f"No architecture is defined for seed {seed}.")
+    return dict(ARCHITECTURES[seed])
 
 
 def _fit_member_worker(arguments: tuple[Any, ...]):
@@ -297,78 +295,11 @@ def _validate_nested_protocol(seeds: Iterable[int], budgets: Iterable[int]) -> N
                         )
             previous = current
         if DEVELOPMENT_COUNT in ordered_budgets:
-            formal = make_split(seed)
+            benchmark_split = make_split(seed)
             full = make_budget_indices(seed, DEVELOPMENT_COUNT)
             for role in ("train", "validation", "calibration"):
-                if not np.array_equal(getattr(formal, role), getattr(full, role)):
+                if not np.array_equal(getattr(benchmark_split, role), getattr(full, role)):
                     raise ValueError(f"N=400 {role} split mismatch for seed {seed}.")
-
-
-def _formal_n400_rows(seed: int, dataset: DatasetBundle) -> tuple[pd.DataFrame, ...]:
-    result_dir = FORMAL_RESULTS / f"seed_{seed}" / "ensemble_mmoe"
-    per_output = pd.read_csv(result_dir / "per_output_metrics.csv")
-    group = pd.read_csv(result_dir / "group_metrics.csv")
-    all_41 = group.loc[group["group"] == "all_41"].iloc[0]
-    if len(per_output) != OUTPUT_COUNT:
-        raise ValueError(f"Expected 41 formal per-output rows for seed {seed}.")
-    if per_output["output_name"].tolist() != list(dataset.output_names):
-        raise ValueError(f"Formal output order mismatch for seed {seed}.")
-    train_count, validation_count, calibration_count = budget_counts(DEVELOPMENT_COUNT)
-    metrics = pd.DataFrame(
-        [
-            {
-                "seed": seed,
-                "sample_size": DEVELOPMENT_COUNT,
-                "train_count": train_count,
-                "validation_count": validation_count,
-                "calibration_count": calibration_count,
-                "r2_macro": float(all_41["r2_macro"]),
-                "rmse_macro": float(all_41["rmse_macro_physical"]),
-                "nrmse_macro": float(all_41["nrmse_macro"]),
-                "case_wall_seconds": np.nan,
-                "cumulative_member_seconds": np.nan,
-                "source": "verified_formal_N400_reuse",
-            }
-        ]
-    )
-    per_output = per_output.assign(
-        seed=seed,
-        sample_size=DEVELOPMENT_COUNT,
-        train_count=train_count,
-        validation_count=validation_count,
-        calibration_count=calibration_count,
-        source="verified_formal_N400_reuse",
-    )
-
-    runtime_by_seed = pd.read_csv(FORMAL_RUNTIME / "runtime_by_seed.csv")
-    runtime = runtime_by_seed.loc[
-        (runtime_by_seed["seed"] == seed)
-        & (runtime_by_seed["method"] == "DE-MMoE")
-    ].iloc[0]
-    metrics.loc[0, "case_wall_seconds"] = float(runtime["method_wall_seconds"])
-    metrics.loc[0, "cumulative_member_seconds"] = float(
-        runtime["cumulative_member_seconds"]
-    )
-
-    timing = pd.read_csv(FORMAL_RUNTIME / "member_timings.csv")
-    timing = timing.loc[
-        (timing["seed"] == seed) & (timing["method"] == "DE-MMoE")
-    ].copy()
-    diagnostics = pd.DataFrame(
-        {
-            "seed": seed,
-            "sample_size": DEVELOPMENT_COUNT,
-            "member_index": timing["member_index"].astype(int),
-            "member_seed": timing["member_seed"].astype(int),
-            "best_epoch": timing["best_epoch"].astype(int),
-            "epochs_completed": timing["epochs_completed"].astype(int),
-            "best_validation_rmse": timing["best_validation_rmse"].astype(float),
-            "fit_seconds": timing["fit_seconds_internal"].astype(float),
-            "parameter_count": timing["parameter_count"].astype(int),
-            "source": "verified_formal_N400_reuse",
-        }
-    )
-    return metrics, per_output, diagnostics
 
 
 def _fresh_case_rows(
@@ -401,7 +332,6 @@ def _fresh_case_rows(
     grouped = group_regression_metrics(per_output)
     all_41 = grouped.loc[grouped["group"] == "all_41"].iloc[0]
     train_count, validation_count, calibration_count = budget_counts(sample_size)
-    source = "fresh_sensitivity_fit"
     metrics = pd.DataFrame(
         [
             {
@@ -412,12 +342,10 @@ def _fresh_case_rows(
                 "calibration_count": calibration_count,
                 "r2_macro": float(all_41["r2_macro"]),
                 "rmse_macro": float(all_41["rmse_macro_physical"]),
-                "nrmse_macro": float(all_41["nrmse_macro"]),
                 "case_wall_seconds": float(wall_seconds),
                 "cumulative_member_seconds": float(
                     sum(member.fit_seconds for member in members)
                 ),
-                "source": source,
             }
         ]
     )
@@ -427,8 +355,7 @@ def _fresh_case_rows(
         train_count=train_count,
         validation_count=validation_count,
         calibration_count=calibration_count,
-        source=source,
-    )
+    ).drop(columns=["nrmse"], errors="ignore")
     diagnostics = pd.DataFrame(
         [
             {
@@ -441,7 +368,6 @@ def _fresh_case_rows(
                 "best_validation_rmse": member.best_validation_rmse,
                 "fit_seconds": member.fit_seconds,
                 "parameter_count": parameter_count(member.model),
-                "source": source,
             }
             for index, member in enumerate(members)
         ]
@@ -460,7 +386,7 @@ def _write_summary(output_dir: Path, expected_seed_count: int) -> pd.DataFrame:
             "validation_count": int(frame["validation_count"].iloc[0]),
             "calibration_count": int(frame["calibration_count"].iloc[0]),
         }
-        for metric in ("r2_macro", "rmse_macro", "nrmse_macro"):
+        for metric in ("r2_macro", "rmse_macro"):
             values = frame[metric].to_numpy(dtype=np.float64)
             row[f"{metric}_mean"] = float(np.mean(values))
             row[f"{metric}_variance"] = (
@@ -471,7 +397,6 @@ def _write_summary(output_dir: Path, expected_seed_count: int) -> pd.DataFrame:
             )
         rows.append(row)
     summary = pd.DataFrame(rows).sort_values("sample_size")
-    summary["complete"] = summary["seed_count"] == expected_seed_count
     summary.to_csv(output_dir / "summary_by_sample_size.csv", index=False)
     return summary
 
@@ -505,17 +430,18 @@ def _validate_outputs(
     numeric_columns = [
         "r2_macro",
         "rmse_macro",
-        "nrmse_macro",
         "case_wall_seconds",
         "cumulative_member_seconds",
     ]
     if not np.isfinite(metrics[numeric_columns].to_numpy(dtype=np.float64)).all():
         raise RuntimeError("Non-finite values occur in the case-level metrics.")
-    if len(summary) != len(budgets) or not bool(summary["complete"].all()):
+    if len(summary) != len(budgets) or not bool(
+        (summary["seed_count"] == len(seeds)).all()
+    ):
         raise RuntimeError("Sample-size summary is incomplete.")
     for sample_size, frame in metrics.groupby("sample_size"):
         summary_row = summary.loc[summary["sample_size"] == sample_size].iloc[0]
-        for metric in ("r2_macro", "rmse_macro", "nrmse_macro"):
+        for metric in ("r2_macro", "rmse_macro"):
             values = frame[metric].to_numpy(dtype=np.float64)
             expected_mean = float(np.mean(values))
             expected_variance = float(np.var(values, ddof=1))
@@ -545,7 +471,6 @@ def main() -> None:
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--smoke", action="store_true")
-    parser.add_argument("--refit-400", action="store_true")
     args = parser.parse_args()
 
     seeds = _parse_integer_list(args.seeds, SEEDS, "seed")
@@ -574,14 +499,12 @@ def main() -> None:
         "member_count": MEMBER_COUNT,
         "member_training": "group-balanced standardized MSE",
         "checkpoint": "equal-output validation standardized RMSE",
-        "architecture": "frozen per seed from formal deterministic MMoE benchmark",
+        "architecture": "fixed within each seed",
         "nested_subsets": True,
-        "primary_metrics": "macro R2 and macro physical-scale RMSE across 41 outputs",
+        "metrics": "macro R2 and macro physical-scale RMSE across 41 outputs",
         "negative_r2_clipped": False,
-        "reuse_formal_n400": not args.refit_400,
         "workers": args.workers,
         "threads_per_worker": args.threads,
-        "smoke": args.smoke,
         "environment_thread_limits": {
             name: os.environ.get(name)
             for name in (
@@ -616,17 +539,14 @@ def main() -> None:
                 continue
             print(f"START {counter}/{total}: seed={seed}, N={sample_size}", flush=True)
             case_start = time.perf_counter()
-            if sample_size == DEVELOPMENT_COUNT and not args.refit_400 and not args.smoke:
-                metric_rows, output_rows, diagnostic_rows = _formal_n400_rows(seed, dataset)
-            else:
-                metric_rows, output_rows, diagnostic_rows = _fresh_case_rows(
-                    dataset,
-                    seed,
-                    sample_size,
-                    smoke=args.smoke,
-                    workers=args.workers,
-                    threads=args.threads,
-                )
+            metric_rows, output_rows, diagnostic_rows = _fresh_case_rows(
+                dataset,
+                seed,
+                sample_size,
+                smoke=args.smoke,
+                workers=args.workers,
+                threads=args.threads,
+            )
             _upsert_csv(
                 metrics_path,
                 metric_rows,
@@ -656,7 +576,9 @@ def main() -> None:
             )
 
     summary = _write_summary(output_dir, expected_seed_count=len(seeds))
-    if len(summary) != len(budgets) or not bool(summary["complete"].all()):
+    if len(summary) != len(budgets) or not bool(
+        (summary["seed_count"] == len(seeds)).all()
+    ):
         raise RuntimeError("Experiment finished with incomplete seed coverage.")
     _validate_outputs(output_dir, seeds, budgets)
     print(f"COMPLETE: {output_dir}", flush=True)

@@ -620,8 +620,8 @@ def _write_result(
             calibrated_variance = (
                 test_prediction.variance + residual_floor[None, :]
             )
-            # Retained only for compatibility with legacy result readers; the
-            # final DE-MMoE uses additive calibration, not a scale multiplier.
+            # A unit scale keeps the output schema common. DE-MMoE uses the
+            # additive residual floor below rather than multiplicative scaling.
             variance_scale = np.ones_like(residual_floor)
         else:
             variance_scale = fit_variance_scale(
