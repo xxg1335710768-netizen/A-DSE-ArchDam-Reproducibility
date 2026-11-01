@@ -1,0 +1,6 @@
+method,change,initial_samples,outer_iterations,nsga2_population,nsga2_generations,al_batch_size,seed
+Full,Complete A-DSE,80,30,200,200,3,2025
+M1,Fixed initial design space,80,30,200,200,3,2025
+M2,Uniform expansion without variable-importance weighting,80,30,200,200,3,2025
+M3,Random active-learning acquisition,80,30,200,200,3,2025
+M4,No accuracy-triggered refinement,80,30,200,200,3,2025

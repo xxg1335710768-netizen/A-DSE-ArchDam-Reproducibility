@@ -1,5 +1,5 @@
 "metric","value"
-"source_final_front","Revise/adaptive_dse/public_results/ablation/Full/pareto_fronts/outer_029_inner_000_de_mmoe_outer_029_inner_000.npz"
+"source_final_front","Final A-DSE Pareto front after 30 design-space updates"
 "selected_pareto_points","50"
 "successful_points","50"
 "failed_points","0"

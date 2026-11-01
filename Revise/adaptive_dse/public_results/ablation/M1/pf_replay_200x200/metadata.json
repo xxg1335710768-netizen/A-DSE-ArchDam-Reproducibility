@@ -1,9 +1,0 @@
-{
-  "method": "M1",
-  "scope": "Pareto search on saved M1 surrogate states; FE and active-learning samples unchanged",
-  "outer_iterations": 30,
-  "nsga2": {"population_size": 200, "generations": 200},
-  "seed_rule": "2025 + zero-based outer iteration",
-  "finite_element_calls": 0,
-  "signed_stress_interval_mpa": [-1.5, 9.78]
-}

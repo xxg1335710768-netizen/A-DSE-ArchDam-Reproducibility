@@ -5,6 +5,8 @@ __pycache__/
 venv/
 .idea/
 Revise/adaptive_dse/runs/
+Revise/adaptive_dse/public_results/ablation/
 Revise/surrogate_benchmark/results/seed_*/
 Revise/surrogate_benchmark/sample_size_sensitivity*/
 Revise/surrogate_benchmark/runtime_*/
+plot_data*.xlsx

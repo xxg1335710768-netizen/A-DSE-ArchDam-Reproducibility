@@ -1,16 +1,16 @@
-# A-DSE arch-dam reproducibility
+# A-DSE arch-dam dataset and code
 
-This repository contains the dataset, source code, and numerical results used to evaluate the surrogate models and the A-DSE method.
+This repository provides the finite-element dataset and the core code used for surrogate benchmarking, optimizer comparison, and A-DSE ablation studies.
 
 ## Contents
 
 - `Revise/dataset/SurrogateDataset.xlsx`: 400 development samples and 80 independent test samples.
 - `Revise/surrogate_benchmark/`: surrogate-model implementations and repeated-test results.
-- `Revise/adaptive_dse/`: A-DSE, ablation, and optimizer-comparison code and results.
+- `Revise/adaptive_dse/`: A-DSE, ablation, and optimizer-comparison code.
 - `DATA_DICTIONARY.md`: variable definitions, units, bounds, and scaling.
-- `REPRODUCIBILITY.md`: experimental settings and result-file locations.
+- `REPRODUCIBILITY.md`: experimental settings and public-result locations.
 
-The Rhino/ANSYS automation and solver project files are not included. The supplied FE dataset is sufficient for the surrogate and optimizer comparisons.
+The Rhino/ANSYS automation and solver project files are not included. The supplied FE dataset is sufficient for the surrogate and optimizer comparisons. Manuscript plotting workbooks and full A-DSE run logs are not distributed.
 
 ## Setup
 
@@ -36,7 +36,9 @@ Table 6 uses fixed-configuration fitting time. It excludes hyperparameter search
 - Table 7: `Revise/surrogate_benchmark/public_results/table6/table7_summary.csv`
 - Sample-size study: `Revise/surrogate_benchmark/public_results/sample_size/`
 - Optimizer comparison: `Revise/adaptive_dse/public_results/optimizer_comparison/`
-- Ablation results: `Revise/adaptive_dse/public_results/ablation/`
+- Ablation protocol: `Revise/adaptive_dse/ablation_protocol.csv`
 - Pareto FE validation: `Revise/adaptive_dse/public_results/pareto_fe_validation/`
+
+The ablation implementations and common settings are included, but manuscript-specific plotting tables, intermediate checkpoints, and per-round optimization logs are omitted.
 
 Dataset SHA-256: `1f9aa8db86de10d3024856d906ef5324724cf1661039ab6b2bfad9bca58ff353`

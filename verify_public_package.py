@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parent
 DATASET = ROOT / "Revise" / "dataset" / "SurrogateDataset.xlsx"
 MODEL = ROOT / "Revise" / "surrogate_benchmark" / "results" / "seed_2025" / "ensemble_mmoe" / "fitted_model.pt"
 TABLE_DIR = ROOT / "Revise" / "surrogate_benchmark" / "public_results" / "table6"
-ABLATION_DIR = ROOT / "Revise" / "adaptive_dse" / "public_results" / "ablation"
 OPTIMIZER_DIR = ROOT / "Revise" / "adaptive_dse" / "public_results" / "optimizer_comparison"
+ABLATION_PROTOCOL = ROOT / "Revise" / "adaptive_dse" / "ablation_protocol.csv"
 
 EXPECTED_DATASET_SHA256 = "1f9aa8db86de10d3024856d906ef5324724cf1661039ab6b2bfad9bca58ff353"
 EXPECTED_MODEL_SHA256 = "a4388e11d8f6ce6b87aa5e5852202d99a58e44e0066272b42674ee1bc09632af"
@@ -134,20 +134,22 @@ def verify_repeated_experiments() -> None:
         raise RuntimeError("Optimizer manifest metadata checksum is stale.")
 
 
-def verify_ablation_status() -> None:
-    expected = {
-        "Full": (200, 200),
-        "M1": (100, 100),
-        "M2": (200, 200),
-        "M3": (200, 200),
-        "M4": (100, 100),
+def verify_ablation_protocol() -> None:
+    protocol = pd.read_csv(ABLATION_PROTOCOL)
+    expected_methods = {"Full", "M1", "M2", "M3", "M4"}
+    if set(protocol["method"]) != expected_methods or len(protocol) != len(expected_methods):
+        raise RuntimeError("Unexpected ablation methods.")
+    common_columns = {
+        "initial_samples": 80,
+        "outer_iterations": 30,
+        "nsga2_population": 200,
+        "nsga2_generations": 200,
+        "al_batch_size": 3,
+        "seed": 2025,
     }
-    for method, (population, generations) in expected.items():
-        with (ABLATION_DIR / method / "metadata.json").open(encoding="utf-8-sig") as stream:
-            metadata = json.load(stream)
-        nsga2 = metadata["nsga2"]
-        if nsga2["population_size"] != population or nsga2["generations"] != generations:
-            raise RuntimeError(f"Unexpected NSGA-II setting for {method}.")
+    for column, expected in common_columns.items():
+        if not (protocol[column] == expected).all():
+            raise RuntimeError(f"Ablation protocol is inconsistent in {column}.")
 
 
 def verify_hygiene() -> None:
@@ -208,6 +210,7 @@ def verify_hygiene() -> None:
         ROOT / "Revise" / "surrogate_benchmark" / "public_results" / "table5",
         ROOT / "Revise" / "surrogate_benchmark" / "build_table5_results.py",
         OPTIMIZER_DIR / "optimizer_comparison_results_final_front.xlsx",
+        ROOT / "Revise" / "adaptive_dse" / "public_results" / "ablation",
     ]
     existing = [path.relative_to(ROOT) for path in obsolete if path.exists()]
     if existing:
@@ -234,6 +237,7 @@ def main() -> None:
         TABLE_DIR / "table7_by_seed.csv",
         TABLE_DIR / "table7_summary.csv",
         OPTIMIZER_DIR / "optimizer_comparison_results.xlsx",
+        ABLATION_PROTOCOL,
         ROOT / "Revise" / "adaptive_dse" / "public_results" / "pareto_fe_validation" / "validation_summary.csv",
     ]
     missing = [path.relative_to(ROOT) for path in required if not path.is_file()]
@@ -243,7 +247,7 @@ def main() -> None:
     verify_table6()
     verify_table7()
     verify_repeated_experiments()
-    verify_ablation_status()
+    verify_ablation_protocol()
     verify_hygiene()
 
     print("Public package verification passed.")
@@ -251,7 +255,7 @@ def main() -> None:
     print("Table 6: 7 models x 5 seeds; manuscript values and fitting times verified")
     print("Table 7: 6 probabilistic models x 5 seeds verified")
     print("Optimizer comparison: 3 algorithms x 12 budgets x 10 seeds verified")
-    print("Ablations: settings and result files verified")
+    print("Ablations: common public protocol verified")
 
 
 if __name__ == "__main__":

@@ -51,9 +51,11 @@ The three representative FE solutions are excluded from surrogate fitting. Activ
 | Method | Change | NSGA-II |
 |---|---|---:|
 | Full | Complete A-DSE | 200 x 200 |
-| M1 | Fixed design space | 100 x 100 |
+| M1 | Fixed design space | 200 x 200 |
 | M2 | Uniform expansion | 200 x 200 |
 | M3 | Random active learning | 200 x 200 |
-| M4 | No accuracy trigger | 100 x 100 |
+| M4 | No accuracy trigger | 200 x 200 |
 
-`M1/pf_replay_200x200` applies a 200 x 200 Pareto search to the saved M1 surrogate states. It does not change the M1 FE or active-learning samples. Search-budget-dependent quantities should be compared only between runs with the same NSGA-II setting.
+All five configurations use the same initial dataset, outer-iteration count, NSGA-II budget, active-learning batch size, and random seed. Only the mechanism named in the `Change` column is altered. The machine-readable settings are provided in `Revise/adaptive_dse/ablation_protocol.csv`.
+
+Full per-round optimization logs, model checkpoints, Pareto archives, and manuscript plotting workbooks are not part of the public package.
